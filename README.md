@@ -7,4 +7,11 @@ yarn
 yarn dev
 ```
 
+### Instruments
+
+- vite
+- react
+- taiwlind.css
+- ethers
+
 ![Screenshot](./readmeImage.png)
