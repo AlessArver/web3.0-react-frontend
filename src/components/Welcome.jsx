@@ -2,6 +2,8 @@ import React, { useEffect, useContext, useState } from "react";
 import { AiFillPlayCircle } from "react-icons/ai";
 import { SiEthereum } from "react-icons/si";
 import { BsInfoCircle } from "react-icons/bs";
+import { useFormik } from "formik";
+import * as Yup from "yup";
 
 import { TransactionContext } from "../context/TransactionContext";
 import { shortenAddress } from "../utils/shortenAddress";
@@ -10,37 +12,52 @@ import { Tooltip, Input, Loader } from ".";
 const companyCommonStyles =
   "min-h-[70px] sm:px-0 px-2 sm:min-w-[120px] flex justify-center items-center text-sm font-light text-white";
 
+const validationSchema = Yup.object().shape({
+  addressTo: Yup.string().required("Обязательное поле"),
+  amount: Yup.string().required("Обязательное поле"),
+  keyword: Yup.string().required("Обязательное поле"),
+  message: Yup.string().required("Обязательное поле"),
+});
+
 export const Welcome = () => {
-  const {
-    connectWallet,
-    currentAccount,
-    formData,
-    handleChange,
-    sendTransaction,
-    currentBalance,
-    getBalance,
-  } = useContext(TransactionContext);
+  const transactionContext = useContext(TransactionContext);
   const [showTooltip, setShowtooltip] = useState(false);
+  const formik = useFormik({
+    initialValues: {
+      addressTo: "",
+      amount: "",
+      keyword: "",
+      message: "",
+    },
+    validationSchema,
+    onSubmit: (values, { resetForm }) => {
+      transactionContext?.sendTransaction({
+        ...values,
+        amount: values.amount.toString(),
+      });
+      resetForm();
+    },
+  });
 
   useEffect(() => {
-    getBalance();
+    transactionContext?.getBalance();
   }, []);
 
   const handleToggleTooltip = () => {
     setShowtooltip(!showTooltip);
   };
 
-  const handleSubmit = (e) => {
-    Object.values(formData).map((value) => {
-      if (!value) {
-        return;
-      }
-    });
-
-    e.preventDefault();
-
-    sendTransaction();
-  };
+  const renderInput = ({ name, type = "text", placeholder }) => (
+    <Input
+      placeholder={placeholder}
+      name={name}
+      type={type}
+      value={formik.values[name]}
+      onChange={formik.handleChange}
+      isDanger={!!formik.touched && !!formik.errors[name]}
+      error={formik.errors[name]}
+    />
+  );
 
   return (
     <div className="flex w-full justify-center items-center">
@@ -53,10 +70,10 @@ export const Welcome = () => {
             Explore the crypto world. Buy and sell cryptocurrencies easily on
             Krypto.
           </p>
-          {!currentAccount && (
+          {!transactionContext?.currentAccount && (
             <button
               type="button"
-              onClick={connectWallet}
+              onClick={transactionContext?.connectWallet}
               className="flex flex-row justify-center items-center my-5 bg-pink-400 p-3 rounded-full cursor-pointer hover:shadow-lg transition ease-in-out delay-150"
             >
               <AiFillPlayCircle className="text-white mr-2" />
@@ -105,58 +122,49 @@ export const Welcome = () => {
                 </Tooltip>
               </div>
               <div>
-                <p className="text-white font-light text-sm">
-                  Address: {shortenAddress(currentAccount)}
-                </p>
-                <p className="text-white font-light text-sm">
-                  Balance: {currentBalance} ETH
-                </p>
+                {transactionContext?.currentAccount && (
+                  <>
+                    <p className="text-white font-light text-sm">
+                      Address:{" "}
+                      {shortenAddress(transactionContext?.currentAccount)}
+                    </p>
+                    <p className="text-white font-light text-sm">
+                      Balance: {transactionContext?.currentBalance} ETH
+                    </p>
+                  </>
+                )}
                 <p className="text-white font-semibold text-lg mt-1">
                   Ethereum
                 </p>
               </div>
             </div>
           </div>
-          <div className="p-5 sm:w-96 w-full flex flex-col justify-start items-center rounded-xl bg-white border-none shadow-2xl">
-            <Input
-              placeholder="Address To"
-              name="addressTo"
-              type="text"
-              handleChange={handleChange}
-            />
-            <Input
-              placeholder="Amount (ETH)"
-              name="amount"
-              type="number"
-              handleChange={handleChange}
-            />
-            <Input
-              placeholder="Keyword (Gif)"
-              name="keyword"
-              type="text"
-              handleChange={handleChange}
-            />
-            <Input
-              placeholder="Enter Message"
-              name="message"
-              type="text"
-              handleChange={handleChange}
-            />
+          <form
+            onSubmit={formik.handleSubmit}
+            className="p-5 sm:w-96 w-full flex flex-col justify-start items-center rounded-xl bg-white border-none shadow-2xl"
+          >
+            {renderInput({ name: "addressTo", placeholder: "Address To" })}
+            {renderInput({
+              name: "amount",
+              type: "number",
+              placeholder: "Amount (ETH)",
+            })}
+            {renderInput({ name: "keyword", placeholder: "Keyword (Gif)" })}
+            {renderInput({ name: "message", placeholder: "Enter Message" })}
 
             <div className="h-[1px] w-full bg-gray-400 my-2" />
 
-            {false ? (
+            {transactionContext?.isLoading ? (
               <Loader />
             ) : (
               <button
-                type="button"
-                onClick={handleSubmit}
+                type="submit"
                 className="text-white w-full mt-2 border-[1px] p-2 bg-black hover:font-semibold transition ease-in-out delay-150 rounded-full cursor-pointer"
               >
                 Send now
               </button>
             )}
-          </div>
+          </form>
         </div>
       </div>
     </div>

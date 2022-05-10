@@ -1,7 +1,8 @@
 import { useContext } from "react";
+import { useAtom } from "jotai";
 
+import { transactionsAtom } from "../store";
 import { TransactionContext } from "../context/TransactionContext";
-
 import dummyData from "../utils/dummyData";
 import { shortenAddress } from "../utils/shortenAddress";
 
@@ -11,6 +12,7 @@ const TransactionsCard = ({
   timestamp,
   message,
   amount,
+  keyword,
   url,
 }) => {
   return (
@@ -48,8 +50,8 @@ const TransactionsCard = ({
           )}
         </div>
         <img
-          src={url}
-          alt="nature"
+          src={url || keyword}
+          alt="image"
           className="w-full h-64 2xl:h-96 rounded-md object-cover"
         />
         <div className="bg-white p-3 px-5 rounded-3xl -mt-5 shadow-2xl">
@@ -61,7 +63,9 @@ const TransactionsCard = ({
 };
 
 export const Transactions = () => {
-  const { currentAccount, transactions } = useContext(TransactionContext);
+  const { currentAccount, transactions, transactionCount } =
+    useContext(TransactionContext);
+  const [_] = useAtom(transactionsAtom);
 
   return (
     <div className="flex w-full justify-center items-center 2xl:px-20">
@@ -72,11 +76,9 @@ export const Transactions = () => {
             : "Connect your account to see the latest transactions"}
         </h3>
         <div className="flex flex-wrap justify-center items-center mt-10">
-          {[...dummyData, ...transactions]
-            .reverse()
-            .map((transaction, index) => (
-              <TransactionsCard key={index} {...transaction} />
-            ))}
+          {transactions.reverse().map((transaction, index) => (
+            <TransactionsCard key={index} {...transaction} />
+          ))}
         </div>
       </div>
     </div>

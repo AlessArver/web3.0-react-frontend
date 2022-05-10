@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { ethers } from "ethers";
+import { useAtom } from "jotai";
 
+import { transactionsAtom } from "../store";
 import { contractABI, contractAddress } from "../utils/constants";
 
 export const TransactionContext = React.createContext();
@@ -29,10 +31,10 @@ export const TransactionsProvider = ({ children }) => {
   const [currentAccount, setCurrentAccount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [transactionCount, setTransactionCount] = useState(
-    localStorage.getItem("transactionCount")
+    localStorage.getItem("transactionCount") || 0
   );
-  const [transactions, setTransactions] = useState([]);
   const [currentBalance, setCurrentBalance] = useState("");
+  const [transactions, setTransactions] = useState([]);
 
   const handleChange = (e, name) => {
     setformData((prevState) => ({ ...prevState, [name]: e.target.value }));
@@ -47,7 +49,7 @@ export const TransactionsProvider = ({ children }) => {
 
   const getAllTransactions = async () => {
     try {
-      if (ethereum) {
+      if (!!ethereum) {
         const transactionsContract = createEthereumContract();
 
         const availableTransactions =
@@ -83,7 +85,6 @@ export const TransactionsProvider = ({ children }) => {
 
       if (accounts.length) {
         setCurrentAccount(accounts[0]);
-
         getAllTransactions();
       } else {
         console.log("No accounts found");
@@ -95,10 +96,10 @@ export const TransactionsProvider = ({ children }) => {
 
   const checkIfTransactionsExists = async () => {
     try {
-      if (ethereum) {
+      if (!!ethereum) {
         const transactionsContract = createEthereumContract();
         const currentTransactionCount =
-          await transactionsContract.getTransactionsCount();
+          await transactionsContract.getTransactionCount();
 
         window.localStorage.setItem(
           "transactionCount",
@@ -107,7 +108,6 @@ export const TransactionsProvider = ({ children }) => {
       }
     } catch (error) {
       console.log(error);
-
       throw new Error("No ethereum object");
     }
   };
@@ -121,18 +121,18 @@ export const TransactionsProvider = ({ children }) => {
       });
 
       setCurrentAccount(accounts[0]);
+      getAllTransactions();
       window.location.reload();
     } catch (error) {
       console.log(error);
-
       throw new Error("No ethereum object");
     }
   };
 
-  const sendTransaction = async () => {
+  const sendTransaction = async (data) => {
     try {
-      if (ethereum) {
-        const { addressTo, amount, keyword, message } = formData;
+      if (!!ethereum) {
+        const { addressTo, amount, keyword, message } = data;
         const transactionsContract = createEthereumContract();
         const parsedAmount = ethers.utils.parseEther(amount);
 
@@ -161,17 +161,18 @@ export const TransactionsProvider = ({ children }) => {
         console.log(`Success - ${transactionHash.hash}`);
         setIsLoading(false);
 
-        const transactionsCount =
-          await transactionsContract.getTransactionsCount();
+        getAllTransactions();
 
-        setTransactionCount(transactionsCount.toNumber());
-        window.location.reload();
+        // const transactionsCount =
+        //   await transactionsContract.getTransactionCount();
+
+        // setTransactionCount(transactionsCount.toNumber());
+        // window.location.reload();
       } else {
         console.log("No ethereum object");
       }
     } catch (error) {
       console.log(error);
-
       throw new Error("No ethereum object");
     }
   };
@@ -186,7 +187,6 @@ export const TransactionsProvider = ({ children }) => {
       value={{
         transactionCount,
         connectWallet,
-        transactions,
         currentAccount,
         isLoading,
         sendTransaction,
@@ -194,6 +194,7 @@ export const TransactionsProvider = ({ children }) => {
         formData,
         getBalance,
         currentBalance,
+        transactions,
       }}
     >
       {children}

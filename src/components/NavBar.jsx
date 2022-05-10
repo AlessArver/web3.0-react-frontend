@@ -2,8 +2,6 @@ import { useState } from "react";
 import { HiMenuAlt4 } from "react-icons/hi";
 import { AiOutlineClose } from "react-icons/ai";
 
-// import logo from "../../images/logo.png";
-
 const NAVBAR_ITEMS = ["About"];
 
 const NavBarItem = ({ title, className }) => {
@@ -28,9 +26,6 @@ export const NavBar = () => {
         {NAVBAR_ITEMS.map((item, index) => (
           <NavBarItem key={item + index} title={item} />
         ))}
-        <li className="bg-pink-400 py-2 px-7 mx-4 rounded-full cursor-pointer hover:shadow-lg transition ease-in-out delay-150">
-          Login
-        </li>
       </ul>
       <div className="flex relative">
         {toggleMenu ? (
